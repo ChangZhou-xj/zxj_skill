@@ -127,13 +127,10 @@ icon: 📋
 
 - <前端改动说明>
 
-### 4.2 后端改动
+### 4.2 逻辑处理
 
-- <后端改动说明>
+- <逻辑处理说明>
 
-### 4.3 数据字典/枚举
-
-- <数据字典或枚举说明>
 
 ---
 
@@ -158,7 +155,7 @@ icon: 📋
     </TableRow>
 </Table>
 
-<Callout icon="ℹ️" blockColor="light_blue" borderColor="sky_blue">本报告基于A8工单系统可见信息生成，具体内容以目标系统实际数据为准。</Callout>
+<Callout icon="ℹ️" blockColor="light_blue" borderColor="sky_blue">经过全面自测，前端页面展示正确,  新增加的功能可以正确使用, 在各关联业务场景中, 均能正确展示与操作，功能符合需求预期，未发现明显缺陷与异常，可正常上线使⽤。</Callout>
 
 ---
 
