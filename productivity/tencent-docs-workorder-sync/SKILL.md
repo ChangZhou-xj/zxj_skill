@@ -59,7 +59,7 @@ triggers:
 | 复核状态 | col[8] | 固定写 `待复核` |
 | 合并状态 | col[9] | 固定写 `已合并` |
 | 是否涉及前/后端 | col[10] | 有后端编号或前端编号（issue号）→ `是`，否则留空 |
-| 提测日期 | col[11] | **格式化字符串** `YYYY年MM月DD日`（如 `2026年04月23日`），**不要用 Excel 序列号** |
+| 提测日期 | col[11] | 同步当天 **+1 天**的格式化字符串 `YYYY年MM月DD日`（如同步日期为 2026-04-23，则写 `2026年04月24日`），**不要用 Excel 序列号** |
 | 测试人 | col[12] | 留空 |
 | 测试状态 | col[13] | 留空 |
 | 测试备注 | col[14] | 留空 |
@@ -108,7 +108,10 @@ def build_fe_be_str(info):
 ```bash
 python3 -c "
 import openpyxl, re
-from datetime import date
+from datetime import date, timedelta
+today = date.today()
+test_date = (today + timedelta(days=1)).strftime('%Y年%m月%d日')  # 同步当天+1天
+
 wb = openpyxl.load_workbook('/home/ubuntu/performance-tool/data/work-record.xlsx', data_only=True)
 ws = wb['工作记录']
 # ... 过滤写入 ...
@@ -153,7 +156,7 @@ const values = [
   { row: 6, col: 8, value_type: 'STRING', string_value: '待复核' },
   { row: 6, col: 9, value_type: 'STRING', string_value: '已合并' },
   { row: 6, col: 10, value_type: 'STRING', string_value: '是' },
-  { row: 6, col: 11, value_type: 'STRING', string_value: '2026年04月23日' },
+  { row: 6, col: 11, value_type: 'STRING', string_value: test_date },  // 同步当天+1天
   // row 7, col 0-14 ...
 ];
 
