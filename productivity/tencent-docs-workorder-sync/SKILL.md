@@ -31,8 +31,8 @@ triggers:
 ## 数据源与目标
 - 源文档 file_id: `DQWRRSWZzQ2VBSmFW`（工单文档）
 - 目标文档 file_id: `DQXpETkpFdGh3emtO`，sheet_id: `gllec0`（无纸化代码复核表，URL tab 参数）
-- 源数据优先从本地文件读取（API 频繁触发 400007 限流）：`/home/ubuntu/performance-tool/data/work-record.xlsx`（Sheet: 工作记录）
-- 写入账号：周兴杰
+- 源数据优先从本地文件读取（API 频繁触发 400007 限流，需首先执行任务npm run download-work-record）：`/home/ubuntu/performance-tool/data/work-record.xlsx`（Sheet: 工作记录）
+- 写入账号需与登记人一致：周兴杰
 
 ## 写入条件（全部满足）
 
@@ -51,14 +51,14 @@ triggers:
 | 登记人 | col[0] | 固定写 `周兴杰` |
 | A8单号/月度任务编号 | col[1] | 源表 `A8单号`（col[16]），无则用 `提交编号`（col[12]） |
 | 涉及前/后端编号 | col[2] | 格式：`【后端：XXX】【前端：XXX】`（见下方提取规则） |
-| 项目名称 | col[3] | 源表 `项目名称`（col[9]），可留空 |
+| 项目名称 | col[3] | 源表 `项目名称`（col[9]），必填 |
 | 问题描述 | col[4] | 源表 `提交信息`（col[14]）完整文本，**不是任务内容** |
 | 地址 | col[5] | 留空 |
 | 初审状态 | col[6] | 固定写 `待初审` |
 | 终审状态 | col[7] | 固定写 `待终审` |
 | 复核状态 | col[8] | 固定写 `待复核` |
 | 合并状态 | col[9] | 固定写 `已合并` |
-| 是否涉及前/后端 | col[10] | 有后端编号或前端编号（issue号）→ `是`，否则留空 |
+| 是否涉及前/后端 | col[10] | 默认写 `是`（按当前数据约束 issue 号必存在）；仅当提交信息异常导致前后端编号都未提取到时留空 |
 | 提测日期 | col[11] | 同步当天 **+1 天**的格式化字符串 `YYYY年MM月DD日`（如同步日期为 2026-04-23，则写 `2026年04月24日`），**不要用 Excel 序列号** |
 | 测试人 | col[12] | 留空 |
 | 测试状态 | col[13] | 留空 |
@@ -74,7 +74,7 @@ import re
 def extract_issue(info):
     # 提取提交信息开头的 issue 号（前端编号来源）
     # 例如：#20260420002【需求】... → 20260420002
-    m = re.match(r'#(\S+)', info.strip())
+    m = re.match(r'#([A-Za-z0-9-]+)', info.strip())
     return m.group(1) if m else ''
 
 def extract_be(info):
@@ -120,12 +120,18 @@ ws = wb['工作记录']
 
 ### 步骤2：读取目标表已登记单号
 ```bash
-# 用 get_cell_data return_csv=true 读取目标表已有数据
+# 先取行数，再全量读取已存在登记数据（避免只读前20行造成重复写入）
+~/.hermes/node/bin/mcporter call tencent-sheetengine get_sheet_info --args '{
+  "file_id": "DQXpETkpFdGh3emtO",
+  "sheet_id": "gllec0"
+}'
+
+# 用 get_cell_data return_csv=true 读取 0 到 row_count-1 行
 ~/.hermes/node/bin/mcporter call tencent-sheetengine get_cell_data --args '{
   "file_id": "DQXpETkpFdGh3emtO",
   "sheet_id": "gllec0",
   "start_row": 0,
-  "end_row": 20,
+  "end_row": <row_count-1>,
   "start_col": 0,
   "end_col": 2,
   "return_csv": true
@@ -150,6 +156,7 @@ const values = [
   { row: 6, col: 0, value_type: 'STRING', string_value: '周兴杰' },
   { row: 6, col: 1, value_type: 'STRING', string_value: 'KFXQ-CX-xxx' },
   { row: 6, col: 2, value_type: 'STRING', string_value: '【后端：20260421002】【前端：20260420002】' },
+  { row: 6, col: 3, value_type: 'STRING', string_value: 'XXX项目' }, // 项目名称（必填）
   { row: 6, col: 4, value_type: 'STRING', string_value: '#20260420002 【需求】...' },
   { row: 6, col: 6, value_type: 'STRING', string_value: '待初审' },
   { row: 6, col: 7, value_type: 'STRING', string_value: '待终审' },
@@ -177,7 +184,11 @@ mcporter call tencent-sheetengine set_range_value --args '{
 | 提测日期用 Excel 序列号 NUMBER 类型 | 新行显示格式与原表不一致，应用格式化字符串 |
 
 ### 写入起始行确定
-先用 `get_sheet_info` 拿到 `row_count`，写入起始行 = `row_count`（0-based 索引）。
+先用 `get_sheet_info` 拿到有效行信息，写入起始行应为“最后一条非空记录的下一行”（0-based 索引）。
+
+推荐实现：
+1. 优先使用接口返回的已用行数（若有）作为起始行；
+2. 若仅有容量型 `row_count`，则先用 `get_cell_data` 读取末尾一段并逆向扫描首列/关键列，定位最后非空行，再 +1 作为起始行。
 
 ## 验证步骤
 
