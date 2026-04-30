@@ -1050,3 +1050,53 @@
 - **图片字段写入**：向图片类型字段（field_type=5）写入数据时，需先调用 `upload_image` 工具上传图片获取 `image_id`，再以 `[{"image_id": "xxx"}]` 格式填入字段值
 - **字段类型不可变**：`update_fields` 时 `field_type` 不能修改，但必须传入原值；支持的字段类型详见字段类型枚举表
 - **记录字段值格式**：不同字段类型的值格式不同，详见上方"字段值格式参考"章节
+
+
+## 常见问题与解决方案
+
+### 问题1：smartsheet.add_records 报错 SheetEngine Error (code: 6086003)
+
+当调用 `smartsheet.add_records` 添加记录到工作表时，可能会遇到 `SheetEngine Service Error` 错误，导致添加失败。
+
+**解决方案**：使用 `sheet.insert_dimension` + `sheet.set_range_value` 组合操作
+
+```bash
+# 步骤1：先插入空行（使用 AFTERLAST 追加到末尾）
+mcporter call tencent-docs sheet.insert_dimension --args '{
+  "count": <要插入的行数>,
+  "dimension_type": "ROWS",
+  "direction": "AFTERLAST",
+  "file_id": "<文档ID>",
+  "sheet_id": "<工作表ID>"
+}'
+
+# 步骤2：写入数据
+mcporter call tencent-docs sheet.set_range_value --args '{
+  "file_id": "<文档ID>",
+  "sheet_id": "<工作表ID>",
+  "values": [["值1", "值2", "值3"], ["值4", "值5", "值6"]]
+}'
+```
+
+**注意**：
+- `direction` 必须使用 `"AFTERLAST"` 才能真正追加到表格末尾
+- 使用 `"AFTER"` 会在指定位置插入，不会追加到末尾
+- `values` 是二维数组，每行一个数组
+- 如果数据写入位置不正确（写入到错误的行），可能是因为表格中存在空行，数据被写入了已有的空行。此时需要先确认表格末尾行的实际位置（通过 `sheet.get_sheet_info` 获取 `row_count`）
+
+### 问题2：如何确认数据写入到了正确的位置
+
+```bash
+# 获取表格信息，查看当前行数
+mcporter call tencent-docs sheet.get_sheet_info --args '{"file_id": "<文档ID>"}'
+
+# 读取末尾几行数据，确认写入位置
+mcporter call tencent-docs sheet.get_cell_data --args '{
+  "end_col": 5,
+  "end_row": <row_count>,
+  "file_id": "<文档ID>",
+  "sheet_id": "<工作表ID>",
+  "start_col": 0,
+  "start_row": <row_count - 5>
+}'
+```

@@ -2,20 +2,22 @@
 
 ## 概述
 
-Playwright MCP 是微软官方提供的 Model Context Protocol (MCP) 服务器，提供完整的浏览器自动化能力。它使用 Playwright 的可访问性树（accessibility tree）而非屏幕截图，使得 LLM 能够直接与页面元素交互，无需视觉模型。
+**⚠️ 重要经验：实际环境使用 Python Playwright 脚本，而非 MCP 工具。**
+
+MCP `browser_*` 工具（`browser_navigate` 等）在当前环境中无法正常工作（导航超时），实际验证可行的工作方式是**直接编写 Python Playwright 脚本**执行自动化操作。
+
+当前环境安装的是 **Python 版 Playwright**（而非 Node.js 版本）：
+```
+/home/ubuntu/.local/lib/python3.10/site-packages/playwright
+```
 
 ## 配置
 
-Playwright MCP 已在 `~/.hermes/config.yaml` 中配置：
+Playwright MCP 虽在 `~/.hermes/config.yaml` 中配置，但 MCP 工具不可用。浏览器自动化统一使用 Python 脚本方式。
 
-```yaml
-mcp_servers:
-  playwright:
-    command: npx
-    args: ["-y", "@playwright/mcp@latest"]
-```
+## 工具列表（已废弃，仅作参考）
 
-## 工具列表
+> 以下 MCP 工具在当前环境中不可用，请使用下方「Python 脚本工作流」代替。
 
 ### 核心导航与操作
 
@@ -26,13 +28,6 @@ mcp_servers:
 mcp_playwright_browser_navigate({
   url: "http://120.35.0.67:28101/seeyon/main.do?method=main"
 })
-```
-
-#### mcp_playwright_browser_navigate_back
-返回上一页。
-
-```javascript
-mcp_playwright_browser_navigate_back()
 ```
 
 #### mcp_playwright_browser_snapshot
@@ -524,6 +519,90 @@ mcp_playwright_browser_network_requests({
 | - | `mcp_playwright_browser_hover()` | **新增**：悬停 |
 | - | `mcp_playwright_browser_network_requests()` | **新增**：网络监控 |
 | `profile` 参数 | 无需 | MCP 自动管理会话 |
+
+## Python 脚本工作流（实际验证可行）
+
+> MCP 工具不可用时，使用此工作流代替。
+
+### 前置条件
+
+Python Playwright 已安装（Python 版，非 Node.js）：
+```bash
+python3 -c "from playwright.sync_api import sync_playwright; print('OK')"
+```
+
+脚本统一保存在 `/tmp/a8_*.py`，通过 `python3 /tmp/a8_*.py` 执行。
+
+### 脚本 1：登录 A8
+
+```python
+from playwright.sync_api import sync_playwright
+
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    page = browser.new_page()
+    page.set_default_timeout(30000)
+    page.goto('http://120.35.0.67:28101/seeyon/main.do?method=main')
+    page.wait_for_load_state('networkidle', timeout=20000)
+    page.fill('#login_username', '1003854')
+    page.fill('#login_password1', 'zxjqwe@621')
+    page.click('#login_button')
+    page.wait_for_load_state('networkidle', timeout=15000)
+    print('LOGGED_IN')
+    browser.close()
+```
+
+登录页关键元素 ID：
+- `#login_username` — 用户名输入框
+- `#login_password1` — 密码输入框
+- `#login_button` — 登录按钮
+
+### 脚本 2：打开工单（双击在新标签页）
+
+A8 工单链接单击在当前页展开，双击才会在**新标签页**打开工单详情。
+
+```python
+# 先登录，然后在已登录主页执行：
+links = page.query_selector_all('a')
+for l in links:
+    if 'KFXQ-CX-2026032700129' in l.inner_text():
+        l.dblclick()
+        break
+
+page.wait_for_timeout(3000)
+# 切换到新页面
+if len(browser.contexts[0].pages) > 1:
+    page2 = browser.contexts[0].pages[-1]
+    page2.wait_for_load_state('networkidle', timeout=15000)
+    print('WORKORDER_URL:' + page2.url)
+```
+
+### 脚本 3：获取 iframe 内表单数据
+
+工单表单内容在 `iframe#zwIframe` 中，直接导航到该 iframe 的 `src` URL 即可提取数据：
+
+```python
+# 在工单详情页（page2）执行：
+iframe_url = page2.evaluate("() => document.querySelector('#zwIframe').src")
+
+# 在新页面加载 iframe 内容
+page3 = browser.contexts[0].pages[0]  # 回到主页或新建页面
+page3.goto(iframe_url)
+page3.wait_for_load_state('networkidle', timeout=20000)
+body = page3.inner_text('body')
+print(body)  # 完整表单内容
+```
+
+注意：A8 表单 iframe URL 包含 `moduleId`、`rightId` 等参数，每次工单不同，必须从页面动态提取。
+
+### 已知问题与解决
+
+| 问题 | 原因 | 解决 |
+|------|------|------|
+| `browser_navigate` MCP 超时 | MCP 工具在当前环境不可用 | 使用 Python 脚本 |
+| `playwright` Node.js 模块找不到 | 安装的是 Python 版 | 使用 `python3` 而非 `node` 执行 |
+| 工单详情点击后 URL 不变 | 单击在当前页展开 | 改用双击打开新标签 |
+| 表单内容为空 | 表单在 iframe 内 | 提取 `#zwIframe` 的 `src` 并直接导航 |
 
 ## 资源
 

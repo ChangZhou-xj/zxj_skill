@@ -1,0 +1,8 @@
+{
+  "last_report_path": "/home/ubuntu/.hermes/logs/curator/20260430-071148",
+  "last_run_at": "2026-04-30T07:11:48.869401+00:00",
+  "last_run_duration_seconds": 142.672646,
+  "last_run_summary": "auto: no changes; llm: ---\n\n## Consolidation Pass — Summary\n\n### Clusters processed\n\n| Cluster | Members | Action | Outcome |\n|---------|---------|--------|---------|\n| **tencent-docs** | `tencent-docs` (broad umbrella) + `tencent-docs-workorder-sync` (narrow, se…",
+  "paused": false,
+  "run_count": 1
+}

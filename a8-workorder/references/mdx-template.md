@@ -155,7 +155,7 @@ icon: 📋
     </TableRow>
 </Table>
 
-<Callout icon="ℹ️" blockColor="light_blue" borderColor="sky_blue">经过全面自测，前端页面展示正确,  新增加的功能可以正确使用, 在各关联业务场景中, 均能正确展示与操作，功能符合需求预期，未发现明显缺陷与异常，可正常上线使⽤。</Callout>
+<Callout icon="ℹ️" blockColor="light_blue" borderColor="sky_blue">经过全面测试，后端接口新增字段数据传输准确，前端页面及组件展示正常。在各关联业务场景中，均能正确展示与操作，功能符合需求预期，未发现明显缺陷与异常，可正常上线使用。</Callout>
 
 ---
 

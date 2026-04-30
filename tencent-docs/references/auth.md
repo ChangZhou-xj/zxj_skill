@@ -86,3 +86,12 @@ mcporter config add tencent-sheetengine "https://docs.qq.com/api/v6/sheet/mcp" \
 | `ERROR:save_token_failed` | Token 写入配置失败 |
 | `ERROR:no_code` | 未找到授权码，需重新执行第一步 |
 | `ERROR:network` | 网络请求失败，检查网络后重试 |
+| `ERROR:unknown(ret=, response={"ret":11510})` | **授权码无效/已使用** — 授权码已过期或已被使用。处理方法：清空临时文件后重新执行第一步 `tdoc_check_and_start_auth` 生成新链接 |
+
+## 常见授权问题排查
+
+| 问题 | 原因 | 解决方法 |
+|------|------|---------|
+| `tdoc_fetch_token` 返回 11510 | 授权码已过期或已被使用 | `rm -f /tmp/.tdoc_auth_code /tmp/.tdoc_auth_url && bash setup.sh tdoc_check_and_start_auth` |
+| 每次调用都提示安装 mcporter | mcporter 未安装或路径问题 | `npm install -g mcporter@0.8.1` |
+| 授权链接在浏览器中打不开 | 链接含特殊字符被截断 | 用 `xxd /tmp/.tdoc_auth_url` 从十六进制导出查看真实 code，再用完整 URL 在浏览器打开 |

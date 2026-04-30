@@ -35,6 +35,7 @@ skills:
     username_env: A8_USERNAME
     password_env: A8_PASSWORD
     doc_policy: 2
+    code_review_folder_id: AeFcjhNsqZaD
     browser_profile: playwright
 ```
 
@@ -109,7 +110,6 @@ if len(browser.contexts[0].pages) > 1:
 ```
 http://120.35.0.67:28101/seeyon/collaboration/collaboration.do?method=summary&openFrom=listPending&affairId=xxx&showTab=true
 ```
-
 详情页包含大量 iframe，实际工单表单在 `#zwIframe` 中：
 
 ```python
@@ -140,6 +140,41 @@ body = page3.inner_text('body')
 print(body)  # 工单表单完整文本
 ```
 
+**⚠️ 重要补充：提取表单字段的实际值（fwparam）**
+
+工单表单页面中，各字段的实际填写值存储在隐藏的 `fwparam` 字段中，直接用 `inner_text` 可能只读到大标题而不含详细内容。**必须同时提取 textarea/input 的 fwparam 值**，才能获取完整的【详细需求描述】等内容：
+
+```python
+# 在表单页面（iframe_url）执行，提取 fwparam 中的字段值
+field_values = page3.evaluate("""() => {
+    const params = new URLSearchParams(window.location.search);
+    const fwparamStr = decodeURIComponent(params.get('fwparam') || '');
+    return fwparamStr;
+}""")
+print(field_values)
+
+# 同时提取所有 textarea/input 的值
+fields = page3.evaluate("""() => {
+    const result = {};
+    document.querySelectorAll('textarea, input').forEach(el => {
+        if (el.name) result[el.name] = el.value;
+    });
+    return result;
+}""")
+for k, v in fields.items():
+    if v and len(str(v)) > 5:
+        print(f'{k}: {str(v)[:200]}')
+```
+
+**实用技巧：快速获取 affairId**
+
+在工单列表页双击打开工单后，从页面 URL 或浏览器 cookie/localStorage 中提取 affairId（数字格式，带负号），用于构造直接访问链接：
+
+```python
+affair_id = page2.url  # 从 URL 中解析 affairId=xxx
+print(f'affairId: {affair_id}')
+```
+
 ### 步骤 4：提取审批意见历史
 
 在详情页（URL 含 `collaboration.do?method=summary`）获取审批意见历史：
@@ -165,9 +200,22 @@ if idx >= 0:
 
 **⚠️ 标题限制：最多 36 字符。** 工单编号 `KFXQ-CX-2026032700129` 约 24 字符，留给描述的字符有限。超长报错：`code:400001, msg:title length exceeds 36 characters`
 
-### 步骤 6：设置文档权限
+### 步骤 6：移动文档到代码评审文件夹
 
-创建后**立即**设置权限：
+使用 `manage.folder_list` 确认代码评审文件夹 ID（`AeFcjhNsqZaD`），然后将文档移入：
+
+```bash
+/home/ubuntu/.hermes/node/bin/mcporter call "tencent-docs" "manage.move_file" --args '{
+  "file_id": "<file_id>",
+  "target_folder_id": "AeFcjhNsqZaD"
+}'
+```
+
+**注意**：如果创建时已直接在目标文件夹（代码评审），`move_file` 会报错 `code:11607`（源文件夹与目标相同），此错误可忽略。
+
+### 步骤 7：设置文档权限
+
+移动后**立即**设置权限：
 
 ```bash
 /home/ubuntu/.hermes/node/bin/mcporter call "tencent-docs" "manage.set_privilege" --args '{
@@ -179,7 +227,7 @@ if idx >= 0:
 - `policy=2`：所有人可读
 - `policy=3`：所有人可编辑
 
-### 步骤 7：返回结果
+### 步骤 8：返回结果
 
 返回给用户：
 1. 腾讯文档链接
@@ -206,6 +254,8 @@ MDX 模板详见 `references/mdx-template.md`。
 | 腾讯文档标题超 36 字符报错 | 工单编号+简短描述，总长 ≤ 36 |
 | 审批意见历史在主页正文而非表单 iframe | 在 `collaboration.do?method=summary` 页面提取 |
 | `mcporter` 命令找不到 | 使用绝对路径：`/home/ubuntu/.hermes/node/bin/mcporter` |
+| 表单 `inner_text` 只读到大标题，【详细需求】等字段内容为空 | **必须提取 textarea/input 的 fwparam 值**，获取表单实际字段内容 |
+| 报告结尾提示框内容 | **固定文字**：`经过全面测试，后端接口新增字段数据传输准确，前端页面及组件展示正常。在各关联业务场景中，均能正确展示与操作，功能符合需求预期，未发现明显缺陷与异常，可正常上线使用。` |
 
 ## 依赖
 

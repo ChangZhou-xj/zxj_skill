@@ -48,6 +48,7 @@ metadata: {"openclaw":{"primaryEnv":"TENCENT_DOCS_TOKEN","category":"tencent","t
 | 不支持能力上报（report_unsupported_feature） | — | `references/unsupported_feature_reporting.md` |
 | 文件管理（重命名/移动/删除/复制/导入导出/权限等） | — | `references/manage_references.md` |
 | 其他通用场景 | smartcanvas | `smartcanvas/entry.md` |
+| 工单同步写入（周兴杰工单→代码复核表） | — | `references/workorder-sync.md` |
 
 ## 📁 文件目录结构
 
@@ -65,7 +66,8 @@ tencent-docs/
 │   ├── docengine_references.md     # Word 文档精细编辑（独立服务 tencent-docengine）
 │   ├── space_references.md         # 知识库空间管理（空间/节点/文件夹）
 │   ├── manage_references.md        # 文件管理（重命名/移动/删除/复制/导入导出/权限）
-│   └── unsupported_feature_reporting.md # 不支持能力上报规则（report_unsupported_feature）
+│   ├── unsupported_feature_reporting.md # 不支持能力上报规则（report_unsupported_feature）
+│   └── workorder-sync.md           # 工单同步写入工作流（周兴杰工单→代码复核表）
 ├── smartcanvas/                    # 智能文档（smartcanvas）品类模块
 │   ├── entry.md                    # 智能文档（smartcanvas）品类入口，创建与编辑
 │   └── mdx_references.md           # MDX 格式规范（smartcanvas 内容格式）
