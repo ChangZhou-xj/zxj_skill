@@ -1,0 +1,45 @@
+{
+  "jobs": [
+    {
+      "id": "ac265ed70799",
+      "name": "zxj-skills-sync",
+      "prompt": "\u5c06 ~/.hermes/skills \u76ee\u5f55\u4e0b\u7684\u6240\u6709 skill \u6587\u4ef6\u540c\u6b65\u53d1\u5e03\u5230 GitHub \u4ed3\u5e93 https://github.com/ChangZhou-xj/zxj_skill\n\n\u6b65\u9aa4\uff1a\n1. cd ~/.hermes/skills && pwd \u786e\u8ba4\u76ee\u5f55\n2. \u68c0\u67e5\u662f\u5426\u4e3a git \u4ed3\u5e93\uff1agit rev-parse --git-dir\uff08\u5982\u679c\u662f\u8fd4\u56de.git\u8def\u5f84\uff0c\u5982\u679c\u5426\u4f1a\u62a5\u9519\uff09\n3. \u5982\u679c\u4e0d\u662f git \u4ed3\u5e93\uff0c\u521d\u59cb\u5316\uff1agit init && git remote add origin git@github.com:ChangZhou-xj/zxj_skill.git\n4. \u8bbe\u7f6e git \u7528\u6237\uff08\u5982\u679c\u672a\u8bbe\u7f6e\uff09\uff1agit config user.name \"Hermes Agent\" && git config user.email \"hermes@agent.local\"\n5. git add -A \u6dfb\u52a0\u6240\u6709\u53d8\u66f4\n6. \u68c0\u67e5\u662f\u5426\u6709\u53d8\u66f4\uff1agit diff --cached --stat\n7. \u5982\u679c\u6709\u53d8\u66f4\uff0c\u63d0\u4ea4\uff1agit commit -m \"skills sync $(date '+%Y-%m-%d %H:%M')\"\n8. \u63a8\u9001\uff1agit push origin main\uff08\u6216master\uff0c\u89c6\u8fdc\u7a0b\u5206\u652f\u800c\u5b9a\uff09\n9. \u62a5\u544a\u63a8\u9001\u7ed3\u679c\uff08\u6210\u529f\u6216\u5931\u8d25\uff09\n\n\u5982\u679c git push \u9700\u8981\u8ba4\u8bc1\uff0c\u5148\u5c1d\u8bd5 ssh -T git@github.com \u9a8c\u8bc1\u8fde\u63a5\u3002\n\u62a5\u544a\u5b8c\u6574\u7684\u6267\u884c\u8f93\u51fa\u3002",
+      "skills": [
+        "github-auth",
+        "github-pr-workflow"
+      ],
+      "skill": "github-auth",
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 10 * * 6",
+        "display": "0 10 * * 6"
+      },
+      "schedule_display": "0 10 * * 6",
+      "repeat": {
+        "times": null,
+        "completed": 1
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-06T16:44:27.153472+08:00",
+      "next_run_at": "2026-05-09T10:00:00+08:00",
+      "last_run_at": "2026-05-06T17:06:11.586869+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "weixin:o9cq802VIxTaQTjfEmDX7CeCVJcQ@im.wechat",
+      "origin": null,
+      "enabled_toolsets": null,
+      "workdir": null
+    }
+  ],
+  "updated_at": "2026-05-06T17:06:11.587413+08:00"
+}

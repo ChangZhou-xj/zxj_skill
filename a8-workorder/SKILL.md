@@ -54,7 +54,8 @@ TENCENT_DOC_POLICY=2
 
 ### 步骤 1：登录 A8 系统
 
-**重要：使用 Python Playwright（而非 MCP 工具）**
+**重要：使用 Python 
+ MCP 工具）**
 
 技能文档中的 `mcp_playwright_*` MCP 工具在此环境下不可用。实际使用 Python 脚本通过 Playwright API 直接操作浏览器。
 

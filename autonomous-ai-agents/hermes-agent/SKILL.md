@@ -172,9 +172,21 @@ hermes cron create SCHED    Create: '30m', 'every 2h', '0 9 * * *'
 hermes cron edit ID         Edit schedule, prompt, delivery
 hermes cron pause/resume ID Control job state
 hermes cron run ID          Trigger on next tick
-hermes cron remove ID       Delete a job
+hermes cron remove ID        Delete a job
 hermes cron status          Scheduler status
 ```
+
+#### Debugging Failed Cron Jobs
+
+**`cronjob run` is asynchronous** — the job is scheduled and executes in the background. The returned state shows `scheduled`, not the job's result. Re-query `cronjob list` after a few seconds to see updated `last_run_at` and `last_status`.
+
+**`execute_code` fails with "Docker command is available"** — the execute_code tool cannot run commands in this environment. Do NOT rely on it for shell commands. Use `delegate_task` with `toolsets: ["terminal"]` instead, but note that `delegate_task` also cannot spawn new shells (only manages existing `process` sessions). The most reliable diagnostic is to run the command directly in your terminal and read the output.
+
+**`browser_navigate` to local files times out** — `file://` URLs to local filesystem paths (e.g. `file:///home/ubuntu/.hermes/logs/gateway.log`) do not work. Use terminal commands instead.
+
+**WeChat delivery failure vs task failure** — A cron job in `error` state with `last_delivery_error: null` means the task's own command failed (e.g. `hermes update` network timeout), NOT that message delivery failed. `send_message` can be used independently to test whether the messaging channel itself works.
+
+See `references/hermes-cron-debugging.md` for session transcripts of these failure modes.
 
 ### Webhooks
 
@@ -306,7 +318,11 @@ Type these during an interactive chat session.
 
 ---
 
-## Key Paths & Config
+### Troubleshooting (see `references/cron-debugging.md`)
+
+For cron job debugging (scheduler not ticking, WeChat delivery failures, task vs delivery error distinction), see `references/cron-debugging.md`.
+
+**Key Paths & Config**
 
 ```
 ~/.hermes/config.yaml       Main configuration
@@ -599,6 +615,81 @@ terminal(command="tmux new-session -d -s resumed 'hermes --resume 20260225_14305
 - **Config changes:** In gateway: `/restart`. In CLI: exit and relaunch.
 - **Code changes:** Restart the CLI or gateway process
 
+### `cronjob` tool requires croniter in hermes venv
+
+The `cronjob` tool (and `hermes cron create`) depends on the `croniter` Python package. Installing it via system pip (`pip install croniter`) does NOT work — hermes runs under its own venv.
+
+**Install into the correct venv:**
+```bash
+/home/ubuntu/.hermes/hermes-agent/venv/bin/python -m pip install croniter
+```
+Verify: `/home/ubuntu/.hermes/hermes-agent/venv/bin/python -c "import croniter; print('ok')"`
+
+**Symptom:** `cronjob create` fails with "Cron expressions require 'croniter' package" even after `pip install croniter` succeeds.
+
+---
+
+### Cron Job Debugging: Task Execution Error vs Delivery Error
+
+When a cron job shows `last_status: error`:
+1. **Check `last_delivery_error` first** — if null, the push/delivery itself succeeded; the error is in the task execution
+2. **Common cause of error state:** `hermes update` in a headless cron environment times out on `git ls-remote` (no terminal attached, network timeouts propagate as errors)
+3. **Fix:** Replace `hermes update` in the prompt with `hermes version` or `hermes doctor --fix` — these don't make network calls to github.com
+4. **Verify the delivery channel independently:** use `send_message` tool directly to test push functionality
+
+---
+
+## Checking Hermes Version / Update Status (All Environments)
+
+### Normal environment (terminal available)
+```bash
+hermes --version           # Current installed version (~0.75s with warm cache)
+cd ~/.hermes/hermes-agent && git log --oneline -1           # Currently checked-out commit
+cd ~/.hermes/hermes-agent && git fetch origin && git log --oneline origin/main -1  # Latest on main
+```
+
+### Degraded environment (no terminal, no process execution)
+If the `terminal` tool is unavailable and `process` tool returns `not_found` for all session IDs, you cannot run hermes directly. Fall back to:
+
+1. **Read the version from pyproject.toml** (no git/network needed):
+   ```
+   ~/.hermes/hermes-agent/pyproject.toml  →  line with `version = "x.y.z"`
+   ```
+
+2. **Read current git commit from git internals** (no network):
+   ```
+   ~/.hermes/hermes-agent/.git/refs/heads/main  →  current HEAD SHA
+   ~/.hermes/hermes-agent/.git/refs/heads/main  →  origin/main SHA (if merged)
+   ```
+
+3. **Check update cache** (~24h TTL):
+   ```
+   ~/.hermes/.update_check  →  JSON with `ts`, `behind`, `rev`
+   ```
+   If `behind: 0`, already up to date per last check.
+
+4. **Probe GitHub API** via `curl` or browser to get latest release tag:
+   ```
+   https://api.github.com/repos/NousResearch/hermes-agent/releases/latest
+   ```
+   (Response includes `tag_name`, e.g. `v1.2.3`)
+
+5. **Manual hermes binary check** — binary locations to probe:
+   - `~/.local/bin/hermes`
+   - `~/.hermes/hermes-agent/venv/bin/hermes`
+   - `which hermes` (if terminal available)
+
+**Failing signals that you are in a degraded environment:**
+- `process` tool `submit` returns `not_found` for any session_id
+- `terminal` tool returns `"Tool 'terminal' does not exist"` or similar
+- Browser navigation consistently times out
+
+**Do not attempt repeated `process` submissions** — the loop detector will flag you. Use the file-based fallback above instead.
+
+### `execute_code` tool loops on Docker check
+
+If `execute_code` keeps failing with "Docker command is available but 'docker version' failed" even when passing valid Python code — this is an environment pre-check that fires before any code runs. The tool loops into the same error regardless of what you pass. **Workaround:** Use `delegate_task` with `toolsets: ["terminal"]` instead, or ask the user to run commands manually in their terminal.
+
 ### `hermes update` slow (~4-5s) or `hermes --version` hangs
 
 **Root cause:** Two separate github.com SSH/HTTPS calls:
@@ -637,6 +728,34 @@ curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scri
 ```
 
 For full technical details (file changes, timings, cache format), see `references/hermes-update-performance.md`.
+
+### `hermes_cli` modules not found (cfg_get, etc.)
+
+**Symptom:** `from hermes_cli.config import cfg_get` raises `ModuleNotFoundError`, but `hermes` command itself runs fine.
+
+**Root cause:** The `hermes` binary uses its own venv Python (`~/.hermes/hermes-agent/venv/bin/python3`) whose site-packages include `hermes_cli`. System Python (plain `python3`) has a different `sys.path` and cannot find the module.
+
+**Always use the venv Python when importing hermes_cli:**
+```bash
+# Correct — uses hermes's own Python
+~/.hermes/hermes-agent/venv/bin/python3 -c "from hermes_cli.config import cfg_get"
+
+# Or activate the venv first
+source ~/.hermes/hermes-agent/venv/bin/activate
+python3 -c "from hermes_cli.config import cfg_get"
+
+# Verify which python you're using
+which python3   # system python → wrong
+which hermes    # → venv python → correct
+```
+
+**If you need system Python to find hermes_cli, install it in-place:**
+```bash
+~/.hermes/hermes-agent/venv/bin/pip install -e ~/.hermes/hermes-agent/
+```
+After this, plain `python3` can import `hermes_cli`.
+
+**Never do `pip install hermes-agent` from PyPI** — the pip package is unrelated to this git-installed setup.
 
 ### Skills not showing
 1. `hermes skills list` — verify installed

@@ -354,6 +354,20 @@ git push -u origin HEAD
 # 8. Merge when green (see Section 6)
 ```
 
+See `references/publish-local-dir-to-github.md` for the complementary case: publishing a local non-git directory to a fresh GitHub repo (init → add remote → commit → push).
+
+## Limitations in Cron Job / Headless Environments
+
+This workflow relies on `git push`, which requires spawning a git subprocess via shell. In a cron job environment where `process` (terminal) and `execute_code` (Python/Docker) are unavailable, **git push cannot succeed** — even if credentials are properly configured.
+
+- `process` can only manage *existing* processes, not spawn new ones
+- `execute_code` may fail with Docker errors
+- `browser_navigate` times out
+
+**What does work in cron jobs:** `skill_view`, `skills_list`, file tools, and the `web` toolset's `http_request` for GitHub API calls.
+
+For a cron job that must push to GitHub, the recommended approach is a wrapper script (`/home/ubuntu/.hermes/scripts/sync_zxj_skills.sh`) invoked by crontab, run in an environment where shell access is confirmed available.
+
 ## Useful PR Commands Reference
 
 | Action | gh | git + curl |

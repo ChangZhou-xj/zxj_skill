@@ -34,6 +34,7 @@ metadata: {"openclaw":{"primaryEnv":"TENCENT_DOCS_TOKEN","category":"tencent","t
 
 | 场景 | 文档类型 | 参考文档 |
 |------|---------|---------|
+| 编辑已有模板文档（含预设章节框架） | smartcanvas | `references/smartcanvas_template_workflow.md`（模板文档编辑规范：如何判断模板vs空白文档、如何定位空章节填充而非追加到末尾） |
 | 报告、笔记、文章、总结等 | smartcanvas | `smartcanvas/entry.md` |
 | 结构化数据管理 | smartsheet | `references/smartsheet_references.md` |
 | 计算、筛选、统计、Excel 操作 | sheet | `sheet/entry.md`（sheet.* 工具 + sheetengine 精细编辑） |

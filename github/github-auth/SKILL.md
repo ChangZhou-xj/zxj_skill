@@ -233,6 +233,54 @@ fi
 
 ---
 
+## Cron Job / Headless Agent Environment
+
+When running as a scheduled cron job, the agent's typical command-execution tools may be unavailable. This is a **distinct environment** from a normal CLI session.
+
+### Tool Availability Matrix
+
+| Tool | Normal Session | Cron Job |
+|------|---------------|----------|
+| `execute_code` (Python/Docker) | ✅ Usually works | ❌ Docker may fail `"Docker command is available but 'docker version' failed"` |
+| `process` (terminal/shell) | ✅ Can create sessions | ❌ `process` only manages *existing* processes — cannot spawn new shells |
+| `browser_navigate` | ✅ Works | ❌ Times out (~60s) |
+| `skill_view` / `skills_list` | ✅ Works | ✅ Works |
+| `web` toolset `http_request` | ✅ Works | ✅ Works (use this for GitHub API) |
+| `file` toolset (`read_file`, `write_file`, `ListDir`) | ✅ Works | ✅ Works |
+
+### GitHub API Without Shell (Web Toolset)
+
+When shell commands are unavailable but the `web` toolset is present, use `http_request` from the web toolset to call the GitHub REST API directly:
+
+```bash
+# Check if a repo exists (no auth needed for public repos)
+curl -s https://api.github.com/repos/ChangZhou-xj/zxj_skill
+
+# List repo contents (public)
+curl -s https://api.github.com/repos/ChangZhou-xj/zxj_skill/contents/
+
+# Authenticated API calls via web toolset
+# Set Authorization: token <GITHUB_TOKEN> header in the http_request
+```
+
+### Skills Directory Access Without Git
+
+When git operations fail but you need to inspect `~/.hermes/skills`:
+
+- **`skill_view`** and **`skills_list`** work normally — skill files are readable even when git isn't
+- The skills directory may be at **`/root/.hermes/skills`** or **`/home/ubuntu/.hermes/skills`** depending on the user context — check both
+- To list all skills: use `skills_list()` API call
+
+### Detecting the Cron Job Environment
+
+If you receive an instruction starting with `"You are running as a scheduled cron job"`, you are in this restricted environment. Assume shell tools are unavailable until proven otherwise. Start with the web toolset for GitHub API access.
+
+### Known Limitation
+
+Even with credentials configured, **git push cannot succeed** in a cron job environment without shell access. The push operation requires spawning a git subprocess, which the `process` tool cannot do (it only manages pre-existing processes). Workaround: trigger a regular CLI session manually, or ensure the cron job's target environment has a working `execute_code` / Docker setup.
+
+---
+
 ## Troubleshooting
 
 | Problem | Solution |
@@ -244,3 +292,5 @@ fi
 | Credentials not persisting | Check `git config --global credential.helper` — must be `store` or `cache` |
 | Multiple GitHub accounts | Use SSH with different keys per host alias in `~/.ssh/config`, or per-repo credential URLs |
 | `gh: command not found` + no sudo | Use git-only Method 1 above — no installation needed |
+| Cron job: `execute_code` fails with Docker error | Use `web` toolset `http_request` for GitHub API; git push requires shell access |
+| Cron job: `process` returns `not_found` for all session IDs | `process` only manages existing processes; cannot spawn new shells in this environment |
