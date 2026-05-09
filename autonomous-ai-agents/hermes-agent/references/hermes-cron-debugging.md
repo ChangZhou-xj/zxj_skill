@@ -75,3 +75,26 @@ Send the result to weixin.
 2. If channel works → the prompt/command inside the job failed, not delivery
 3. For `hermes update` jobs → prefer `hermes version` to avoid git network calls
 4. Always re-query `cronjob list` to get updated status after triggering
+
+---
+
+## Session: 2026-05-08 — Weekly Session Cleanup Cron Job
+
+### Problem
+Created a cron job to prune sessions older than 7 days. Job was set up correctly but when triggered, it hung (never completed) in the cron execution.
+
+### Root Cause
+`hermes sessions prune` prompts for interactive confirmation by default:
+```
+Delete all ended sessions older than 7 days? [y/N]
+```
+In a headless cron environment there is no terminal to answer "y", so the job waits forever.
+
+### Fix
+Add `--yes` flag to bypass the confirmation prompt:
+```bash
+hermes sessions prune --older-than 7 --yes
+```
+
+### Lesson
+Any hermes CLI command that may prompt for confirmation must be tested with `--help` first, and when used in a cron job prompt, must include the non-interactive flag (e.g., `--yes`, `-y`, `--force`).

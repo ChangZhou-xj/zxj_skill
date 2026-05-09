@@ -164,6 +164,12 @@ hermes sessions prune       Clean up old sessions (--older-than N days)
 hermes sessions stats       Session store statistics
 ```
 
+**Cron 环境下 `sessions prune` 必须加 `--yes`：**
+```bash
+hermes sessions prune --older-than 7 --yes
+```
+不加 `--yes` 会触发交互确认（"Delete all ended sessions older than 7 days? [y/N]"），在 headless cron 环境中会永远等待导致任务超时失败。
+
 ### Cron Jobs
 
 ```
@@ -185,6 +191,30 @@ hermes cron status          Scheduler status
 **`browser_navigate` to local files times out** — `file://` URLs to local filesystem paths (e.g. `file:///home/ubuntu/.hermes/logs/gateway.log`) do not work. Use terminal commands instead.
 
 **WeChat delivery failure vs task failure** — A cron job in `error` state with `last_delivery_error: null` means the task's own command failed (e.g. `hermes update` network timeout), NOT that message delivery failed. `send_message` can be used independently to test whether the messaging channel itself works.
+
+### Cron Job Debugging: Task Execution Error vs Delivery Error
+
+When MCP servers show as "failed" or connections fail, the root cause is often an **outdated `mcp` Python package**. Key error signatures:
+
+- `name 'StdioServerParameters' is not defined` → mcp package too old, missing stdio transport
+- `mcp.client.streamable_http is not available` → mcp package too old, missing HTTP transport
+- Token errors like "user is not in the organization" → auth/token expired, not a package issue
+
+**Diagnostic workflow:**
+```bash
+# 1. Test each server individually (fastest diagnosis)
+hermes mcp test playwright
+hermes mcp test hermes-docs
+hermes mcp test alibabacloud-devops-mcp-server
+
+# 2. If StdioServerParameters or streamable_http errors appear, upgrade mcp:
+~/.hermes/hermes-agent/venv/bin/pip install "mcp>=1.0.0" --upgrade
+
+# 3. Restart gateway to apply upgrade:
+hermes gateway restart
+```
+
+Note: Use `~/.hermes/hermes-agent/venv/bin/pip`, NOT system pip. Hermes runs under its own venv.
 
 See `references/hermes-cron-debugging.md` for session transcripts of these failure modes.
 

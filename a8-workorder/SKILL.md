@@ -141,31 +141,48 @@ body = page3.inner_text('body')
 print(body)  # 工单表单完整文本
 ```
 
-**⚠️ 重要补充：提取表单字段的实际值（fwparam）**
+**⚠️ 重要补充：提取表单字段值（不是 fwparam）**
 
-工单表单页面中，各字段的实际填写值存储在隐藏的 `fwparam` 字段中，直接用 `inner_text` 可能只读到大标题而不含详细内容。**必须同时提取 textarea/input 的 fwparam 值**，才能获取完整的【详细需求描述】等内容：
+⚠️ `fwparam` URL参数通常是空的，不要依赖它！
+
+工单表单页面（iframe内）是动态渲染的Vue/前端框架页面，`inner_text('body')` 只能读到大标题和结构，没有实际字段内容。**必须通过 DOM 元素的 `.value` 属性提取实际值**：
 
 ```python
-# 在表单页面（iframe_url）执行，提取 fwparam 中的字段值
-field_values = page3.evaluate("""() => {
-    const params = new URLSearchParams(window.location.search);
-    const fwparamStr = decodeURIComponent(params.get('fwparam') || '');
-    return fwparamStr;
-}""")
-print(field_values)
+# 在表单页面（iframe_url）执行，等待JS完全加载
+page3.wait_for_timeout(8000)  # 等待Vue等框架渲染
 
-# 同时提取所有 textarea/input 的值
-fields = page3.evaluate("""() => {
-    const result = {};
-    document.querySelectorAll('textarea, input').forEach(el => {
-        if (el.name) result[el.name] = el.value;
+# 提取所有 textarea 的值（详细需求描述在这里）
+textareas = page3.evaluate("""() => {
+    const result = [];
+    document.querySelectorAll('textarea').forEach(t => {
+        if (t.value && t.value.trim()) {
+            result.push(t.value);
+        }
     });
     return result;
 }""")
-for k, v in fields.items():
-    if v and len(str(v)) > 5:
-        print(f'{k}: {str(v)[:200]}')
+for t in textareas:
+    print(t[:500])
+
+# 提取所有 input[type="text"] 的值（标题、日期等字段）
+inputs = page3.evaluate("""() => {
+    const result = [];
+    document.querySelectorAll('input[type="text"]').forEach(i => {
+        if (i.value && i.value.trim() && i.value.length > 1) {
+            result.push(i.value);
+        }
+    });
+    return result;
+}""")
+for i in inputs:
+    print(f'INPUT: {i}')
 ```
+
+关键发现（2026-05-07验证）：
+- `fwparam` URL参数为空，不可依赖
+- **textarea 元素**包含【详细需求描述】等多行文本内容
+- **input[type="text"]** 包含标题、日期等单行字段值
+- 需要等待足够时间（5-10秒）让表单JS完全渲染后再提取
 
 **实用技巧：快速获取 affairId**
 
@@ -255,7 +272,7 @@ MDX 模板详见 `references/mdx-template.md`。
 | 腾讯文档标题超 36 字符报错 | 工单编号+简短描述，总长 ≤ 36 |
 | 审批意见历史在主页正文而非表单 iframe | 在 `collaboration.do?method=summary` 页面提取 |
 | `mcporter` 命令找不到 | 使用绝对路径：`/home/ubuntu/.hermes/node/bin/mcporter` |
-| 表单 `inner_text` 只读到大标题，【详细需求】等字段内容为空 | **必须提取 textarea/input 的 fwparam 值**，获取表单实际字段内容 |
+| 表单 `inner_text` 只读到大标题，【详细需求】等字段内容为空 | **必须用 `textarea[i].value` 和 `input[type="text"][i].value` 提取实际值**，`fwparam` URL参数为空不可用 |
 | 报告结尾提示框内容 | **固定文字**：`经过全面测试，后端接口新增字段数据传输准确，前端页面及组件展示正常。在各关联业务场景中，均能正确展示与操作，功能符合需求预期，未发现明显缺陷与异常，可正常上线使用。` |
 
 ## 依赖

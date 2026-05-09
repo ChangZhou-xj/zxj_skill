@@ -1,6 +1,6 @@
 ---
 name: claude-code
-description: "Delegate coding to Claude Code CLI (features, PRs)."
+description: "Delegate coding to Claude Code CLI (features, PRs). Covers claude-code, opencode, and codex — three parallel LLM-coded agent CLIs with provider-specific invocation patterns."
 version: 2.2.0
 author: Hermes Agent + Teknium
 license: MIT

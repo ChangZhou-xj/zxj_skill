@@ -99,3 +99,22 @@ if m:
    - `orange_module` = 用户指定
 
 > **验证记录**：session #30231(orange-aliyun) → #7014(orange-patch pex) 全程 SUCCESS。
+> **验证记录**：session #30278(orange-aliyun) → #7044(orange-patch pex) 全程 SUCCESS。
+
+**orange-aliyun #30278** 产物（日志片段）：
+```
+vOrange_20260508173629
+外网下载地址：http://223.223.178.68:2004/orange-file/vOrange_20260508173629
+orange_20260508173629.zip
+外网下载地址：http://223.223.178.68:2004/orange-file/orange_20260508173629.zip
+parseOrange -> ["parseOrange","orange-patch-20260508173629.zip","..."]
+```
+
+**orange-patch #7044** 产物（日志片段）：
+```
+文件名: update_patch_pex_20260508174840.zip
+外网: http://223.223.178.68:2004/jenkins-orange-patch/update_patch_pex_20260508174840.zip
+vOrange_pex_20260508174840
+外网: http://223.223.178.68:2004/jenkins-orange-patch/vOrange_pex_20260508174840
+Finished: SUCCESS
+```
