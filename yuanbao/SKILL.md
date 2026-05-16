@@ -105,3 +105,14 @@ yb_query_group_info({ "group_code": "328306697" })
 - `group_code` comes from chat_id: `group:328306697` → `328306697`
 - Groups are called "派 (Pai)" in the Yuanbao app
 - Member roles: `user`, `yuanbao_ai`, `bot`
+
+## Known Failure Modes
+
+### `send_message` always fails — use `yb_send_dm` instead
+
+The `send_message` tool (messaging toolset) does NOT work for Yuanbao/WeChat. It returns:
+```
+ret=-2 errcode=None errmsg=unknown error
+```
+
+**Always use `yb_send_dm` for direct messages and group @mention for notifications.** Do not attempt to use `send_message` with Yuanbao — it has no working WeChat gateway integration. If `yb_send_dm` itself fails, the gateway WeChat connection is down and there is no workaround; wait for it to recover.

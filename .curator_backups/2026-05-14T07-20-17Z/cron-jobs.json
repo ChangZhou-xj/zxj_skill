@@ -1,0 +1,121 @@
+{
+  "jobs": [
+    {
+      "id": "ac265ed70799",
+      "name": "zxj-skills-sync",
+      "prompt": "\u5c06 ~/.hermes/skills \u76ee\u5f55\u4e0b\u7684\u6240\u6709 skill \u6587\u4ef6\u540c\u6b65\u53d1\u5e03\u5230 GitHub \u4ed3\u5e93 https://github.com/ChangZhou-xj/zxj_skill\n\n\u6b65\u9aa4\uff1a\n1. cd ~/.hermes/skills && pwd \u786e\u8ba4\u76ee\u5f55\n2. \u68c0\u67e5\u662f\u5426\u4e3a git \u4ed3\u5e93\uff1agit rev-parse --git-dir\uff08\u5982\u679c\u662f\u8fd4\u56de.git\u8def\u5f84\uff0c\u5982\u679c\u5426\u4f1a\u62a5\u9519\uff09\n3. \u5982\u679c\u4e0d\u662f git \u4ed3\u5e93\uff0c\u521d\u59cb\u5316\uff1agit init && git remote add origin git@github.com:ChangZhou-xj/zxj_skill.git\n4. \u8bbe\u7f6e git \u7528\u6237\uff08\u5982\u679c\u672a\u8bbe\u7f6e\uff09\uff1agit config user.name \"Hermes Agent\" && git config user.email \"hermes@agent.local\"\n5. git add -A \u6dfb\u52a0\u6240\u6709\u53d8\u66f4\n6. \u68c0\u67e5\u662f\u5426\u6709\u53d8\u66f4\uff1agit diff --cached --stat\n7. \u5982\u679c\u6709\u53d8\u66f4\uff0c\u63d0\u4ea4\uff1agit commit -m \"skills sync $(date '+%Y-%m-%d %H:%M')\"\n8. \u63a8\u9001\uff1agit push origin main\uff08\u6216master\uff0c\u89c6\u8fdc\u7a0b\u5206\u652f\u800c\u5b9a\uff09\n9. \u62a5\u544a\u63a8\u9001\u7ed3\u679c\uff08\u6210\u529f\u6216\u5931\u8d25\uff09\n\n\u5982\u679c git push \u9700\u8981\u8ba4\u8bc1\uff0c\u5148\u5c1d\u8bd5 ssh -T git@github.com \u9a8c\u8bc1\u8fde\u63a5\u3002\n\u62a5\u544a\u5b8c\u6574\u7684\u6267\u884c\u8f93\u51fa\u3002",
+      "skills": [
+        "github-auth",
+        "github-pr-workflow"
+      ],
+      "skill": "github-auth",
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 10 * * 6",
+        "display": "0 10 * * 6"
+      },
+      "schedule_display": "0 10 * * 6",
+      "repeat": {
+        "times": null,
+        "completed": 3
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-06T16:44:27.153472+08:00",
+      "next_run_at": "2026-05-16T10:00:00+08:00",
+      "last_run_at": "2026-05-09T10:00:55.294135+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "weixin:o9cq802VIxTaQTjfEmDX7CeCVJcQ@im.wechat",
+      "origin": null,
+      "enabled_toolsets": null,
+      "workdir": null
+    },
+    {
+      "id": "8b39583c6994",
+      "name": "hermes-session-cleanup",
+      "prompt": "\u6267\u884c\u4ee5\u4e0b\u547d\u4ee4\u6e05\u7406 hermes \u4e00\u5468\u4e4b\u524d\u7684 session\uff1a\n\nhermes sessions prune --older-than 7 --yes\n\n\u5982\u679c hermes \u547d\u4ee4\u4e0d\u5728 PATH \u4e2d\uff0c\u4f7f\u7528\u5b8c\u6574\u8def\u5f84\uff1a\n~/.hermes/hermes-agent/venv/bin/hermes sessions prune --older-than 7 --yes\n\n\u6267\u884c\u5b8c\u6210\u540e\uff0c\u65e0\u8bba\u6210\u529f\u8fd8\u662f\u5931\u8d25\uff0c\u90fd\u8981\u901a\u8fc7\u5fae\u4fe1\u901a\u77e5\u6211\u7ed3\u679c\u3002\u7ed3\u679c\u5e94\u8be5\u5305\u542b\uff1a\u6e05\u7406\u4e86\u591a\u5c11\u4e2a session\uff0c\u547d\u4ee4\u6267\u884c\u662f\u5426\u6210\u529f\uff0c\u5982\u679c\u6709\u9519\u8bef\u4e5f\u8981\u544a\u77e5\u9519\u8bef\u4fe1\u606f\u3002",
+      "skills": [
+        "autonomous-ai-agents/hermes-agent"
+      ],
+      "skill": "autonomous-ai-agents/hermes-agent",
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 10 * * 6",
+        "display": "0 10 * * 6"
+      },
+      "schedule_display": "0 10 * * 6",
+      "repeat": {
+        "times": null,
+        "completed": 3
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-08T17:13:39.363492+08:00",
+      "next_run_at": "2026-05-16T10:00:00+08:00",
+      "last_run_at": "2026-05-09T10:00:41.149522+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": null,
+      "enabled_toolsets": null,
+      "workdir": null
+    },
+    {
+      "id": "2d5d84ecbb86",
+      "name": "GLM-\u72d9\u51fb\u624b-Lite",
+      "prompt": "\u6267\u884c\u667a\u8c31 GLM Coding Plan \u81ea\u52a8\u62a2\u8d2d\u3002\n\n\u6b65\u9aa4\uff1a\n1. \u8bfb\u53d6\u5df2\u4fdd\u5b58\u7684 session cookie\uff1a/tmp/glm-session.json\n2. \u7528 Node.js \u6267\u884c\u5b8c\u6574\u62a2\u8d2d\u6d41\u7a0b\uff1a\n   /home/ubuntu/.hermes/hermes-agent/node_modules/.bin/node /home/ubuntu/glm-sniper.js buy\n3. \u622a\u56fe\u4fdd\u5b58\u5230 /tmp/glm-buy-result.png\n4. \u628a\u6267\u884c\u7ed3\u679c\u548c\u622a\u56fe\u8def\u5f84\u53cd\u9988\u7ed9\u6211\n\n\u6ce8\u610f\uff1a\n- \u4e0d\u8981\u7528 browser_navigate \u6216\u4efb\u4f55 browser_ \u5f00\u5934\u7684\u5de5\u5177\uff08\u4f1a\u8d85\u65f6\uff09\n- \u53ea\u7528 terminal \u6267\u884c node \u547d\u4ee4\n- \u5982\u679c /tmp/glm-session.json \u4e0d\u5b58\u5728\u6216\u8fc7\u671f\uff0c\u5148\u7528 node glm-sniper.js check \u6d4b\u8bd5\u767b\u5f55",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "50 9 * * *",
+        "display": "50 9 * * *"
+      },
+      "schedule_display": "50 9 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 0
+      },
+      "enabled": false,
+      "state": "paused",
+      "paused_at": "2026-05-14T14:14:00.534197+08:00",
+      "paused_reason": null,
+      "created_at": "2026-05-14T10:12:43.326626+08:00",
+      "next_run_at": "2026-05-15T09:50:00+08:00",
+      "last_run_at": null,
+      "last_status": null,
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": null,
+      "enabled_toolsets": null,
+      "workdir": null
+    }
+  ],
+  "updated_at": "2026-05-14T14:14:00.534523+08:00"
+}

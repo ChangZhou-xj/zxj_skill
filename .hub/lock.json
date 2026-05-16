@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "installed": {
+    "glm-sniper": {
+      "source": "url",
+      "identifier": "https://gitee.com/manchester_nia/hermes-skill-glm-sniper/raw/master/SKILL.md",
+      "trust_level": "community",
+      "scan_verdict": "safe",
+      "content_hash": "sha256:07ca3cc555212044",
+      "install_path": "glm-sniper",
+      "files": [
+        "SKILL.md"
+      ],
+      "metadata": {
+        "url": "https://gitee.com/manchester_nia/hermes-skill-glm-sniper/raw/master/SKILL.md",
+        "awaiting_name": false
+      },
+      "installed_at": "2026-05-14T02:10:37.854776+00:00",
+      "updated_at": "2026-05-14T02:10:37.854792+00:00"
+    }
+  }
+}

@@ -634,6 +634,84 @@ terminal(command="tmux new-session -d -s resumed 'hermes --resume 20260225_14305
 2. Some tools need env vars (check `.env`)
 3. `/reset` after enabling tools
 
+### Browser tool timeout / Playwright MCP "already in use" conflict
+
+**Symptoms:** `browser_navigate` times out at 60s. Simultaneously, Playwright MCP reports `Browser is already in use for /home/ubuntu/.cache/ms-playwright/mcp-chrome-XXXX, use --isolated`.
+
+**Root cause:** `mcp_servers.playwright` in `config.yaml` starts a Playwright MCP server that launches its own Chrome instance at `~/.cache/ms-playwright/mcp-chrome-*/`. The built-in browser tool uses `agent-browser` CLI which also launches Chrome. Both compete for the same Chrome resources, and one set of Chrome processes gets stuck in `Dl` (uninterruptible I/O sleep), blocking the other.
+
+**Diagnosis:**
+```bash
+# Check for stuck Chrome processes
+ps aux | grep chromium | grep -v grep
+# If you see "Dl" state — kernel I/O block, kill -9 won't help
+
+# Check which MCP servers are configured
+grep -A5 "mcp_servers:" ~/.hermes/config.yaml
+
+# Test playwright-core directly (bypasses agent-browser daemon)
+node -e "
+const {chromium} = require('/home/ubuntu/.hermes/hermes-agent/node_modules/playwright-core');
+chromium.launch({headless:true}).then(b => b.newPage().then(p => p.goto('https://example.com').then(() => { console.log('OK'); b.close(); })));
+"
+```
+
+**Correct fix — disable built-in browser, keep Playwright MCP:**
+
+> User preference: Playwright MCP is the primary browser automation tool. When it conflicts with built-in browser, disable built-in browser.
+
+**Step 1:** In `~/.hermes/config.yaml`, disable the built-in browser toolset AND enable Playwright MCP:
+
+```yaml
+# Disable built-in browser (frees Chrome for Playwright MCP)
+agent:
+  disabled_toolsets:
+    - browser
+
+# Enable Playwright MCP
+mcp_servers:
+  playwright:
+    command: npx
+    args:
+    - -y
+    - "@playwright/mcp"   # @ MUST be quoted in YAML, or parser errors: found character '@' that cannot start any token
+```
+
+**Step 2:** Restart gateway:
+```bash
+hermes gateway restart
+# NOT "hermes agents restart" — that command does not exist
+```
+
+**After restart:**
+- `browser_navigate` will route through Playwright MCP (it becomes the sole browser backend)
+- Playwright MCP's 228 tools are available
+- agent-browser daemon is stopped
+
+**Common mistakes:**
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `found character '@' that cannot start any token` | `@playwright/mcp` not quoted in YAML | Add double quotes: `"@playwright/mcp"` |
+| `browser_navigate` still times out | gateway didn't reload config | `hermes gateway restart` (not `hermes agents restart`) |
+| `browser_profile: ''` doesn't disable browser | wrong config path (was in `skills.a8_workorder`) | Use `agent.disabled_toolsets: [browser]` |
+| Playwright MCP `already in use` | still running old Chrome instances | Restart gateway clears them |
+
+**Playwright MCP is preferred over built-in browser because:**
+1. Direct Node.js playwright-core → Chrome IPC, no daemon intermediary
+2. Works reliably in cron jobs (built-in browser's agent-browser daemon hangs in headless environments)
+3. 228 tools vs 1 tool
+
+**Fallback if Playwright MCP also fails in cron:** Use playwright-core directly via Node.js — bypasses all daemon layers entirely:
+```bash
+/home/ubuntu/.hermes/hermes-agent/node_modules/.bin/node /home/ubuntu/glm-sniper.js buy
+```
+
+**Key signals:**
+- `browser_navigate` timeout + Playwright MCP `already in use` error = conflict
+- `agent-browser open URL --json` also times out = agent-browser daemon's Chrome is stuck
+- `Dl` state in `ps aux` = Chrome in kernel I/O wait, cannot be killed, must restart gateway
+- `strace` shows `read(32, "", 4) = 0` after stdio handshake = daemon waiting on Chrome CDP response that never comes
+
 ### Model/provider issues
 1. `hermes doctor` — check config and dependencies
 2. `hermes login` — re-authenticate OAuth providers

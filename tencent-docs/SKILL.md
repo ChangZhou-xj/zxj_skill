@@ -49,7 +49,7 @@ metadata: {"openclaw":{"primaryEnv":"TENCENT_DOCS_TOKEN","category":"tencent","t
 | 不支持能力上报（report_unsupported_feature） | — | `references/unsupported_feature_reporting.md` |
 | 文件管理（重命名/移动/删除/复制/导入导出/权限等） | — | `references/manage_references.md` |
 | 其他通用场景 | smartcanvas | `smartcanvas/entry.md` |
-| 工单同步写入（周兴杰工单→代码复核表） | — | `references/workorder-sync.md` |
+| 工单同步写入（周兴杰工单→代码复核表） | — | `references/workorder-sync.md`（含云效 MR 链接查询规范） |
 
 ## 📁 文件目录结构
 
